@@ -70,7 +70,8 @@ namespace MishaK
 					unsigned int width ,
 					unsigned int height ,
 					bool normalize = true ,
-					bool sanityCheck = false
+					bool sanityCheck = false ,
+					Real regularizationWeight = 0
 				);
 
 			// The number of texels
@@ -94,7 +95,10 @@ namespace MishaK
 			// The mass matrix
 			Eigen::SparseMatrix< Real > mass( void ) const;
 
-			// The stiffness matrix
+			// The stiffness matrix. When the instance was constructed with a nonzero
+			// regularizationWeight, the returned matrix encodes S + regularizationWeight * L_comb,
+			// where L_comb is the combinatorial Laplacian on S's sparsity (diagonal = row-degree,
+			// off-diagonal = -1).
 			Eigen::SparseMatrix< Real > stiffness( void ) const;
 
 			// The divergence matrix
@@ -154,7 +158,8 @@ namespace MishaK
 					unsigned int height ,
 					unsigned int levels ,
 					bool normalize ,
-					bool sanityCheck
+					bool sanityCheck ,
+					Real regularizationWeight
 				);
 		};
 
@@ -188,7 +193,8 @@ namespace MishaK
 					unsigned int height ,
 					unsigned int levels ,
 					bool normalize = true ,
-					bool sanityCheck = false
+					bool sanityCheck = false ,
+					Real regularizationWeight = 0
 				);
 
 			// Access to the system constraints

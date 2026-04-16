@@ -72,7 +72,8 @@ GradientDomain< Real >::GradientDomain
 	unsigned int width ,
 	unsigned int height ,
 	bool normalize ,
-	bool sanityCheck
+	bool sanityCheck ,
+	Real regularizationWeight
 )
 {
 	using PreReal = Real;
@@ -92,7 +93,8 @@ GradientDomain< Real >::GradientDomain
 		height ,
 		1 ,
 		normalize ,
-		sanityCheck
+		sanityCheck ,
+		regularizationWeight
 	);
 }
 
@@ -120,7 +122,8 @@ void GradientDomain< Real >::_init
 	unsigned int height ,
 	unsigned int levels ,
 	bool normalize ,
-	bool sanityCheck
+	bool sanityCheck ,
+	Real regularizationWeight
 )
 {
 	static_assert( _IsTriangleCornerFunctor< SurfaceCornerFunctor >()                , "[ERROR] SurfaceCornerFunctor poorly formed" );
@@ -166,6 +169,8 @@ void GradientDomain< Real >::_init
 		InitializeParameterMetric( mesh , surfaceMetric , atlasCharts , parameterMetric );
 	}
 	OperatorInitializer::Initialize( quadraturePointsPerTriangle , _massAndStiffnessOperators , hierarchy.gridAtlases[0] , parameterMetric , atlasCharts , _divergenceOperator , sanityCheck );
+
+	_massAndStiffnessOperators.applyLaplacianRegularization( regularizationWeight );
 }
 
 template< typename Real >
@@ -379,7 +384,8 @@ HierarchicalGradientDomain< Real , Solver , Data >::HierarchicalGradientDomain
 	unsigned int height ,
 	unsigned int levels ,
 	bool normalize ,
-	bool sanityCheck
+	bool sanityCheck ,
+	Real regularizationWeight
 )
 {
 	GradientDomain< Real >::_init
@@ -397,7 +403,8 @@ HierarchicalGradientDomain< Real , Solver , Data >::HierarchicalGradientDomain
 		height ,
 		levels ,
 		normalize ,
-		sanityCheck
+		sanityCheck ,
+		regularizationWeight
 	);
 	_multigridIndices.resize( levels );
 	_multigridVariables.resize( levels );
