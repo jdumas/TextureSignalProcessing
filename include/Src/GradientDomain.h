@@ -101,6 +101,15 @@ namespace MishaK
 			// off-diagonal = -1).
 			Eigen::SparseMatrix< Real > stiffness( void ) const;
 
+			// Applies +weight * L_comb to stiffnessCoefficients in place, where L_comb is the
+			// combinatorial Laplacian on the stiffness sparsity. Equivalent to having passed
+			// `weight` as regularizationWeight to the constructor (the constructor calls this
+			// internally); exposing it as a public method also allows post-construction
+			// regularization, which is useful for testing against a single consistent
+			// row/column numbering. A no-op when weight is zero. Safe to call at most once
+			// per instance (calling multiple times composes the regularization).
+			void applyLaplacianRegularization( Real weight );
+
 			// The divergence matrix
 			Eigen::SparseMatrix< Real > divergence( void ) const;
 

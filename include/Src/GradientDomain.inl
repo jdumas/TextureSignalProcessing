@@ -222,6 +222,12 @@ Eigen::SparseMatrix< Real > GradientDomain< Real >::stiffness( void ) const
 }
 
 template< typename Real >
+void GradientDomain< Real >::applyLaplacianRegularization( Real weight )
+{
+	_massAndStiffnessOperators.applyLaplacianRegularization( weight );
+}
+
+template< typename Real >
 Eigen::SparseMatrix< Real > GradientDomain< Real >::divergence( void ) const
 {
 	return _divergenceOperator();
