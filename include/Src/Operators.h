@@ -85,6 +85,12 @@ namespace MishaK
 			template< typename OutReal=MatrixReal >
 			Eigen::SparseMatrix< OutReal > stiffness( void ) const;
 
+			// Bake the combinatorial Laplacian of the stiffness sparsity into stiffnessCoefficients
+			// in place: for each off-diagonal entry of stiffness, subtract `weight`; for each diagonal
+			// entry, add `weight * row_degree`. Result: stiffnessCoefficients now encodes S + weight*L_comb.
+			// A no-op when weight is zero. Safe to call at most once per instance.
+			void applyLaplacianRegularization( MatrixReal weight );
+
 		protected:
 			template< bool Add , bool Mass , bool Stiffness , typename Data >
 			void _evaluate( double mWeight , double sWeight , ConstPointer( Data ) in , Pointer( Data ) out ) const;

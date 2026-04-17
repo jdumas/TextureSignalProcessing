@@ -430,6 +430,66 @@ Eigen::SparseMatrix< OutReal > MassAndStiffnessOperators< MatrixReal >::_matrix(
 	return M;
 }
 
+template< typename MatrixReal >
+void MassAndStiffnessOperators< MatrixReal >::applyLaplacianRegularization( MatrixReal weight )
+{
+	if( weight == MatrixReal(0) ) return;
+
+	// Pass 1: deep rows. Each deep row has a fixed 9-entry 3x3 stencil (offsets 0..8 within a
+	// per-row block of 10 MatrixReal values; offset 9 is padding, left untouched). Offset 4 is
+	// the diagonal; the other 8 offsets are off-diagonals. Per-row off-diagonal degree = 8.
+	ThreadPool::ParallelFor
+		(
+			0 , rasterLines.size() ,
+			[&]( unsigned int , size_t r )
+			{
+				const RasterLine & line = rasterLines[r];
+				int lineLength = line.lineEndIndex - line.lineStartIndex + 1;
+				MatrixReal * deep = stiffnessCoefficients.deepCoefficients.data() + static_cast< size_t >( line.coeffStartIndex ) * 10;
+				for( int i=0 ; i<lineLength ; ++i , deep+=10 )
+				{
+					deep[0] -= weight;
+					deep[1] -= weight;
+					deep[2] -= weight;
+					deep[3] -= weight;
+					deep[4] += weight * static_cast< MatrixReal >( 8 );
+					deep[5] -= weight;
+					deep[6] -= weight;
+					deep[7] -= weight;
+					deep[8] -= weight;
+				}
+			}
+		);
+
+	// Pass 2: boundary rows. Row i's off-diagonals = boundaryDeepMatrix[i].RowSize (all off-diag)
+	// + entries in boundaryBoundaryMatrix[i] with .N != i (the .N == i entry, when present, is the
+	// stored diagonal and is always present for FEM stiffness).
+	const unsigned int numBoundary = indexConverter.numBoundary();
+	ThreadPool::ParallelFor
+		(
+			0 , numBoundary ,
+			[&]( unsigned int , size_t ii )
+			{
+				const int i = static_cast< int >( ii );
+
+				int degree = stiffnessCoefficients.boundaryDeepMatrix.RowSize( i );
+				for( int j=0 ; j<stiffnessCoefficients.boundaryBoundaryMatrix.RowSize( i ) ; ++j )
+					if( stiffnessCoefficients.boundaryBoundaryMatrix[i][j].N != i ) ++degree;
+
+				for( int j=0 ; j<stiffnessCoefficients.boundaryDeepMatrix.RowSize( i ) ; ++j )
+					stiffnessCoefficients.boundaryDeepMatrix[i][j].Value -= weight;
+
+				for( int j=0 ; j<stiffnessCoefficients.boundaryBoundaryMatrix.RowSize( i ) ; ++j )
+				{
+					if( stiffnessCoefficients.boundaryBoundaryMatrix[i][j].N == i )
+						stiffnessCoefficients.boundaryBoundaryMatrix[i][j].Value += weight * static_cast< MatrixReal >( degree );
+					else
+						stiffnessCoefficients.boundaryBoundaryMatrix[i][j].Value -= weight;
+				}
+			}
+		);
+}
+
 ////////////////////////
 // DivergenceOperator //
 ////////////////////////
